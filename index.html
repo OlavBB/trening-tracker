@@ -2,254 +2,411 @@
 <html lang="no">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#0f1117">
-  <title>Trening</title>
+  <meta name="theme-color" content="#0a0a0a">
+  <title>Olavs trening</title>
   <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap">
   <style>
+    /* ─────────────────────────────────────────────────────────────────
+       Trening Tracker — B2 "Lab" port
+       Bold mono numbers · hairline rows · swipe-to-log · dark-mode.
+       Status colors (purple/green/orange/red) preserved per spec.
+       ─────────────────────────────────────────────────────────────── */
+
     :root {
-      --bg: #0f1117;
-      --surface: #1a1d27;
-      --surface2: #242736;
-      --primary: #4ade80;
-      --text: #f1f5f9;
-      --text-dim: #64748b;
-      --radius: 16px;
+      --bg: #0a0a0a;
+      --fg: #f5f5f5;
+      --fg-dim: rgba(245, 245, 245, 0.55);
+      --fg-faint: rgba(245, 245, 245, 0.4);
+      --fg-mute: rgba(245, 245, 245, 0.3);
+      --hair: rgba(255, 255, 255, 0.07);
+      --hair-strong: rgba(255, 255, 255, 0.12);
+      --surface-1: rgba(255, 255, 255, 0.04);
+      --accent: #86efac;
+      --status-never: #a78bfa;
+      --status-fresh: #86efac;
+      --status-soon:  #fdba74;
+      --status-due:   #fca5a5;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-    body {
+    html, body {
       background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--fg);
+      font-family: var(--font-sans);
+      letter-spacing: -0.01em;
       min-height: 100vh;
-      padding: 16px 16px 40px;
+      overscroll-behavior: contain;
+    }
+
+    body {
       max-width: 480px;
       margin: 0 auto;
+      padding: 18px 20px calc(32px + env(safe-area-inset-bottom));
     }
+
+    /* ── Header ──────────────────────────────────────────────────────── */
 
     header {
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .hdr-top {
       display: flex;
+      align-items: center;
       justify-content: space-between;
-      align-items: center;
-      padding: 12px 0 24px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--fg-dim);
     }
 
-    header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+    .hdr-left { display: flex; align-items: center; gap: 8px; }
 
-    #config-btn {
-      background: none;
-      border: 1px solid #1e293b;
-      border-radius: 8px;
-      color: var(--text-dim);
-      font-size: 14px;
+    .hdr-left h1 {
+      font-size: inherit;
+      font-weight: inherit;
+      letter-spacing: inherit;
+      text-transform: inherit;
+      color: inherit;
+    }
+
+    .cog {
+      width: 24px; height: 24px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: none; border: none; padding: 0;
+      color: var(--fg-mute); cursor: pointer;
+      border-radius: 4px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .cog:hover, .cog:focus-visible { color: var(--fg); outline: none; background: var(--surface-1); }
+    .cog svg { display: block; }
+
+    .hdr-date {
+      font-family: var(--font-mono);
+      letter-spacing: 0.06em;
+      color: var(--fg-faint);
+    }
+
+    .big-count {
+      display: flex; align-items: baseline; gap: 8px;
+      margin-top: 12px;
+      font-family: var(--font-mono);
+      line-height: 0.9;
+    }
+    .big-num {
+      font-size: 56px; font-weight: 800; letter-spacing: -0.045em;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+    .big-den {
+      font-size: 26px; font-weight: 500;
+      color: var(--fg-faint);
+      letter-spacing: -0.03em;
+    }
+
+    .cap-row {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-top: 4px;
+    }
+    .cap { font-size: 12px; color: var(--fg-dim); letter-spacing: 0.04em; }
+    .cap-right {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--fg-mute);
+      font-family: var(--font-mono);
+    }
+
+    .week-meter { display: flex; gap: 4px; margin-top: 14px; }
+    .week-meter .cell {
+      flex: 1; height: 4px; border-radius: 1px;
+      background: var(--hair-strong);
+      transition: background 0.25s;
+    }
+    .week-meter .cell.on { background: var(--accent); }
+
+    /* ── Rows ────────────────────────────────────────────────────────── */
+
+    #list { padding-bottom: 8px; }
+
+    .row-wrap {
+      position: relative;
+      border-bottom: 1px solid var(--hair);
+      overflow: hidden;
+    }
+
+    /* Status-tinted swipe track behind the row */
+    .swipe-track {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: flex-end;
+      padding-right: 18px;
+      background: linear-gradient(90deg, transparent 0%, color-mix(in oklab, var(--color) 14%, transparent) 50%, color-mix(in oklab, var(--color) 22%, transparent) 100%);
+      color: var(--color);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s;
+    }
+    .swipe-track .label {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11px; font-weight: 800;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      transition: transform 0.12s;
+    }
+    .row-wrap.swiping .swipe-track { opacity: var(--progress, 0); }
+    .row-wrap.armed   .swipe-track { opacity: 1; }
+    .row-wrap.armed   .swipe-track .label { transform: scale(1.05); }
+
+    .row {
+      position: relative; z-index: 2;
+      display: flex; align-items: stretch; gap: 14px;
+      padding: 18px 0;
+      background: var(--bg);
       cursor: pointer;
-      padding: 6px 10px;
+      transition:
+        transform 0.35s cubic-bezier(.2,.7,.3,1),
+        opacity 0.25s,
+        background 0.15s;
+      touch-action: pan-y;
+    }
+    .row-wrap.swiping .row { transition: opacity 0.25s, background 0.15s; }
+    .row-wrap.armed   .row { background: linear-gradient(90deg, color-mix(in oklab, var(--color) 10%, var(--bg)), var(--bg) 70%); }
+    .row-wrap.logging .row { background: linear-gradient(90deg, color-mix(in oklab, var(--color) 8%, var(--bg)), var(--bg) 60%); }
+    .row-wrap.pending .row { opacity: 0; transform: translateX(8px); }
+
+    .digit-col {
+      flex: 0 0 76px;
+      font-family: var(--font-mono);
+      line-height: 0.9;
+      display: flex; flex-direction: column; justify-content: center;
+      color: var(--color);
+    }
+    .digit {
+      font-size: 44px; font-weight: 800; letter-spacing: -0.06em;
+      font-variant-numeric: tabular-nums;
+    }
+    .row-wrap[data-status="never"] .digit { font-size: 32px; }
+    .digit-unit {
+      font-size: 10px; font-weight: 600; margin-top: 5px;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      opacity: 0.7;
     }
 
-    #list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+    .name-col {
+      flex: 1; min-width: 0;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .sub {
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--fg-faint);
+    }
+    .name {
+      font-size: 18px; font-weight: 700; letter-spacing: -0.02em;
+      margin-top: 3px;
+    }
+    .last-note {
+      font-size: 11.5px; color: var(--fg-dim);
+      margin-top: 5px; font-family: var(--font-mono);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
 
-    .card {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 14px 16px;
-      transition: opacity 0.25s;
-    }
-
-    .card.fading { opacity: 0; }
-
-    .card-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .ex-info { flex: 1; min-width: 0; }
-    .ex-name { font-size: 15px; font-weight: 600; }
-    .ex-sub  { font-size: 12px; color: var(--text-dim); margin-top: 1px; }
-
-    .badge {
-      font-size: 12px;
-      font-weight: 600;
-      padding: 3px 9px;
-      border-radius: 20px;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-
-    .badge-never  { background: #1e1b4b; color: #a78bfa; }
-    .badge-fresh  { background: #14532d; color: #4ade80; }
-    .badge-soon   { background: #431407; color: #fb923c; }
-    .badge-due    { background: #450a0a; color: #f87171; }
-
+    /* ✓ button — preserved per spec ("Trykk ✓ → kort ekspanderer") */
     .check-btn {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      border: 2px solid #2d3748;
-      background: none;
-      color: var(--text-dim);
-      font-size: 16px;
+      flex: 0 0 40px;
+      align-self: center;
+      width: 40px; height: 40px;
+      border: 1px solid var(--hair-strong);
+      background: transparent;
+      border-radius: 999px;
+      color: var(--fg-dim);
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
       transition: border-color 0.15s, color 0.15s, background 0.15s;
     }
-
-    .card.open .check-btn {
-      border-color: var(--primary);
-      color: var(--primary);
-      background: #14532d33;
+    .check-btn:hover, .check-btn:focus-visible {
+      color: var(--color);
+      border-color: var(--color);
+      outline: none;
+      background: color-mix(in oklab, var(--color) 8%, transparent);
     }
+    .row-wrap.open .check-btn {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: color-mix(in oklab, var(--accent) 10%, transparent);
+    }
+
+    /* Checkmark draw animation */
+    .ck-svg path {
+      stroke-dasharray: 26;
+      stroke-dashoffset: 26;
+    }
+    .row-wrap.logging .ck-svg path {
+      animation: ck-draw 0.42s cubic-bezier(.65,.05,.36,1) forwards;
+    }
+    @keyframes ck-draw { to { stroke-dashoffset: 0; } }
+
+    /* ── Note flow ───────────────────────────────────────────────────── */
 
     .note-area {
       display: none;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid #1e293b;
+      padding: 4px 0 18px;
+      border-bottom: 1px solid var(--hair);
     }
-
-    .card.open .note-area { display: block; }
+    .row-wrap.open .note-area { display: block; }
 
     .note-area textarea {
       width: 100%;
-      background: var(--surface2);
-      border: 1px solid #2d3748;
-      border-radius: 10px;
-      padding: 10px 12px;
-      color: var(--text);
+      background: var(--surface-1);
+      border: 1px solid var(--hair-strong);
+      border-radius: 4px;
+      padding: 12px 14px;
+      color: var(--fg);
       font-size: 14px;
-      font-family: inherit;
+      font-family: var(--font-sans);
+      line-height: 1.4;
       resize: none;
       height: 64px;
-      line-height: 1.4;
+      outline: none;
+      transition: border-color 0.15s;
     }
+    .note-area textarea::placeholder { color: var(--fg-mute); }
+    .note-area textarea:focus { border-color: var(--accent); }
 
-    .note-area textarea::placeholder { color: var(--text-dim); }
-    .note-area textarea:focus { outline: none; border-color: var(--primary); }
-
-    .note-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
+    .note-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .btn-primary, .btn-ghost {
+      font-family: var(--font-sans);
+      font-size: 13px; font-weight: 800;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      border-radius: 4px; padding: 14px 18px;
+      border: none; cursor: pointer;
     }
-
-    .btn-primary {
-      flex: 1;
-      background: var(--primary);
-      color: #052e16;
-      font-weight: 700;
-      font-size: 14px;
-      border: none;
-      border-radius: 10px;
-      padding: 11px;
-      cursor: pointer;
+    .btn-primary { flex: 1; background: var(--accent); color: #0a1e10; }
+    .btn-ghost {
+      background: transparent; color: var(--fg-dim);
+      border: 1px solid var(--hair-strong);
     }
+    .btn-ghost:hover, .btn-ghost:focus-visible { color: var(--fg); outline: none; }
 
-    .btn-secondary {
-      background: var(--surface2);
-      color: var(--text-dim);
-      font-size: 14px;
-      border: none;
-      border-radius: 10px;
-      padding: 11px 16px;
-      cursor: pointer;
-    }
+    /* ── Status line + modal ─────────────────────────────────────────── */
 
     #status {
       text-align: center;
-      font-size: 12px;
-      color: var(--text-dim);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--fg-mute);
       margin-top: 18px;
-      min-height: 16px;
+      min-height: 14px;
     }
 
-    /* Setup modal */
     #modal {
       display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.85);
+      position: fixed; inset: 0;
+      background: rgba(0, 0, 0, 0.86);
       z-index: 50;
       padding: 24px;
       align-items: flex-end;
+      justify-content: center;
     }
     #modal.open { display: flex; }
 
     .modal-box {
-      background: var(--surface);
-      border-radius: var(--radius);
+      background: #141414;
+      border: 1px solid var(--hair-strong);
+      border-radius: 6px;
       padding: 24px;
       width: 100%;
+      max-width: 432px;
     }
-
-    .modal-box h2 { font-size: 17px; margin-bottom: 8px; }
-
-    .modal-box p {
-      font-size: 13px;
-      color: var(--text-dim);
+    .modal-box h2 {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--fg-dim);
+      margin-bottom: 14px;
+    }
+    .modal-box p, .modal-box li {
+      font-size: 13px; color: var(--fg-dim);
       line-height: 1.6;
-      margin-bottom: 16px;
     }
-
-    .modal-box ol {
-      font-size: 13px;
-      color: var(--text-dim);
-      line-height: 1.8;
-      margin: 0 0 16px 18px;
+    .modal-box p { margin-bottom: 12px; }
+    .modal-box ol { margin: 0 0 16px 18px; }
+    .modal-box code {
+      font-family: var(--font-mono); font-size: 12px;
+      background: var(--surface-1); padding: 1px 5px; border-radius: 2px;
     }
-
     .modal-box input {
       width: 100%;
-      background: var(--surface2);
-      border: 1px solid #2d3748;
-      border-radius: 10px;
-      padding: 11px 12px;
-      color: var(--text);
-      font-size: 13px;
-      margin-bottom: 10px;
+      background: var(--surface-1);
+      border: 1px solid var(--hair-strong);
+      border-radius: 4px;
+      padding: 12px 14px;
+      color: var(--fg);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      margin-bottom: 12px;
+      outline: none;
     }
-
-    .modal-box input:focus { outline: none; border-color: var(--primary); }
-
+    .modal-box input:focus { border-color: var(--accent); }
     .modal-actions { display: flex; gap: 8px; }
+    .modal-actions .btn-primary { flex: 1; }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>Trening</h1>
-  <button id="config-btn">Koble til Sheets</button>
+  <div class="hdr-top">
+    <div class="hdr-left">
+      <h1>Olavs trening</h1>
+      <button id="config-btn" class="cog" aria-label="Innstillinger">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="8" cy="8" r="2.2"/>
+          <path d="M8 1.5v2M8 12.5v2M14.5 8h-2M3.5 8h-2M12.6 3.4L11.2 4.8M4.8 11.2L3.4 12.6M12.6 12.6L11.2 11.2M4.8 4.8L3.4 3.4"/>
+        </svg>
+      </button>
+    </div>
+    <div class="hdr-date" id="hdr-date">—</div>
+  </div>
+  <div class="big-count">
+    <span class="big-num" id="big-num">0</span>
+    <span class="big-den">/ 6</span>
+  </div>
+  <div class="cap-row">
+    <span class="cap">øvelser denne uka</span>
+    <span class="cap-right">Dra ← for å logge</span>
+  </div>
+  <div class="week-meter" id="week-meter"></div>
 </header>
 
-<div id="list"></div>
+<main id="list"></main>
 <div id="status"></div>
 
-<div id="modal">
+<div id="modal" role="dialog" aria-labelledby="modal-title">
   <div class="modal-box">
-    <h2>Google Sheets oppsett</h2>
+    <h2 id="modal-title">Google Sheets oppsett</h2>
     <p>Gjør dette én gang:</p>
     <ol>
       <li>Lag et nytt Google Sheet</li>
-      <li>Gå til Extensions → Apps Script</li>
+      <li>Extensions → Apps Script</li>
       <li>Lim inn koden fra <code>backend.gs</code></li>
       <li>Deploy → New deployment → Web app</li>
       <li>Access: <strong>Anyone</strong> → Deploy</li>
-      <li>Kopier URL-en og lim inn under</li>
+      <li>Lim inn URL-en under</li>
     </ol>
-    <input type="url" id="url-input" placeholder="https://script.google.com/macros/s/..." />
+    <input type="url" id="url-input" placeholder="https://script.google.com/macros/s/...">
     <div class="modal-actions">
       <button class="btn-primary" id="save-btn">Lagre</button>
-      <button class="btn-secondary" id="cancel-btn">Avbryt</button>
+      <button class="btn-ghost"   id="cancel-btn">Avbryt</button>
     </div>
   </div>
 </div>
@@ -257,75 +414,279 @@
 <script type="module">
   import { daysSince, badgeInfo, sorted } from './logic.js';
 
+  // ───────────────────────────────────────────────────────────────────────
+  // Domain — exercises (unchanged from v1)
+  // ───────────────────────────────────────────────────────────────────────
   const EXERCISES = [
-    { id: 'planche', name: 'Planche Push-up',   sub: 'Horisontal skyv' },
-    { id: 'rowing',  name: 'Horisontal Roing',   sub: 'Horisontal trekk' },
-    { id: 'press',   name: 'Skulderpress',        sub: 'Vertikal skyv' },
-    { id: 'pullup',  name: 'Pull-up',             sub: 'Vertikal trekk' },
-    { id: 'squat',   name: 'Knebøy',              sub: 'Knebøy' },
-    { id: 'nordic',  name: 'Nordic Curl',         sub: 'Knefleksjon' },
+    { id: 'planche', name: 'Planche Push-up',  sub: 'Horisontal skyv'  },
+    { id: 'rowing',  name: 'Horisontal Roing', sub: 'Horisontal trekk' },
+    { id: 'press',   name: 'Skulderpress',     sub: 'Vertikal skyv'    },
+    { id: 'pullup',  name: 'Pull-up',          sub: 'Vertikal trekk'   },
+    { id: 'squat',   name: 'Knebøy',           sub: 'Knebøy'           },
+    { id: 'nordic',  name: 'Nordic Curl',      sub: 'Knefleksjon'      },
   ];
 
-  let apiUrl = localStorage.getItem('apiUrl') || '';
-  let state  = JSON.parse(localStorage.getItem('state') || '{}');
+  // badgeInfo.cls → status key + color CSS variable.
+  const STATUS_COLOR = {
+    'badge-never': { key: 'never', color: 'var(--status-never)' },
+    'badge-fresh': { key: 'fresh', color: 'var(--status-fresh)' },
+    'badge-soon':  { key: 'soon',  color: 'var(--status-soon)'  },
+    'badge-due':   { key: 'due',   color: 'var(--status-due)'   },
+  };
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  function statusFromCls(cls) { return STATUS_COLOR[cls] || STATUS_COLOR['badge-never']; }
 
-  function render() {
-    const list = document.getElementById('list');
-    list.innerHTML = sorted(EXERCISES, state).map(ex => {
-      const days = daysSince(state[ex.id]?.date);
-      const { cls, label } = badgeInfo(days);
-      return `
-        <div class="card" data-id="${ex.id}">
-          <div class="card-row">
-            <div class="ex-info">
-              <div class="ex-name">${ex.name}</div>
-              <div class="ex-sub">${ex.sub}</div>
-            </div>
-            <span class="badge ${cls}">${label}</span>
-            <button class="check-btn" onclick="openCard('${ex.id}')">✓</button>
-          </div>
-          <div class="note-area">
-            <textarea id="note-${ex.id}" placeholder="Notat (valgfritt) — posisjon, vekt, progresjon…"></textarea>
-            <div class="note-actions">
-              <button class="btn-primary"   onclick="log('${ex.id}')">Logg</button>
-              <button class="btn-secondary" onclick="log('${ex.id}', true)">Hopp over notat</button>
-            </div>
-          </div>
-        </div>`;
-    }).join('');
+  function dayUnit(days) {
+    if (days === null) return 'aldri';
+    if (days === 1)    return 'dag';
+    return 'dager';
   }
 
-  // ── Interactions ──────────────────────────────────────────────────────────
+  // Today's date — "LØR · 16 MAI"
+  function formatTodayNo(d = new Date()) {
+    const days   = ['SØN','MAN','TIR','ONS','TOR','FRE','LØR'];
+    const months = ['JAN','FEB','MAR','APR','MAI','JUN','JUL','AUG','SEP','OKT','NOV','DES'];
+    return `${days[d.getDay()]} · ${d.getDate()} ${months[d.getMonth()]}`;
+  }
 
-  function openCard(id) {
-    document.querySelectorAll('.card').forEach(c => c.classList.remove('open'));
-    const card = document.querySelector(`.card[data-id="${id}"]`);
-    if (card) {
-      card.classList.add('open');
-      card.querySelector('textarea')?.focus();
+  // Done-this-week count for the header. Same definition as before — done
+  // within the last 7 days, including "today".
+  function weekDoneCount(state) {
+    return EXERCISES.filter(ex => {
+      const d = daysSince(state[ex.id]?.date);
+      return d !== null && d <= 6;
+    }).length;
+  }
+
+  // ───────────────────────────────────────────────────────────────────────
+  // State (persisted to localStorage; synced to Sheets via Apps Script)
+  // ───────────────────────────────────────────────────────────────────────
+  let apiUrl = localStorage.getItem('apiUrl') || '';
+  let state  = JSON.parse(localStorage.getItem('state') || '{}');
+  let openId = null;     // currently-expanded row (one at a time)
+
+  // ───────────────────────────────────────────────────────────────────────
+  // Render
+  // ───────────────────────────────────────────────────────────────────────
+  function render() {
+    // Header counters
+    const done = weekDoneCount(state);
+    document.getElementById('big-num').textContent = done;
+    document.getElementById('hdr-date').textContent = formatTodayNo();
+    const meter = document.getElementById('week-meter');
+    meter.innerHTML = '';
+    for (let i = 0; i < 6; i++) {
+      const c = document.createElement('div');
+      c.className = 'cell' + (i < done ? ' on' : '');
+      meter.appendChild(c);
+    }
+
+    // Rows
+    const list = document.getElementById('list');
+    list.innerHTML = '';
+    sorted(EXERCISES, state).forEach(ex => {
+      const rec = state[ex.id];
+      const days = daysSince(rec?.date);
+      const { cls } = badgeInfo(days);
+      const { key: status, color } = statusFromCls(cls);
+      const isOpen = openId === ex.id;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'row-wrap' + (isOpen ? ' open' : '');
+      wrap.dataset.id = ex.id;
+      wrap.dataset.status = status;
+      wrap.style.setProperty('--color', color);
+
+      wrap.innerHTML = `
+        <div class="swipe-track" aria-hidden="true">
+          <div class="label">
+            <svg width="18" height="18" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 11.5L9 16.5L18 6.5"/>
+            </svg>
+            <span class="track-label">Dra · logg</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="digit-col">
+            <div class="digit">${status === 'never' ? '—' : days}</div>
+            <div class="digit-unit">${dayUnit(days)}</div>
+          </div>
+          <div class="name-col">
+            <div class="sub">${ex.sub}</div>
+            <div class="name">${ex.name}</div>
+            ${rec?.note && !isOpen ? `<div class="last-note">${escapeHtml(rec.note)}</div>` : ''}
+          </div>
+          <button class="check-btn" aria-label="Logg ${ex.name}">
+            <svg class="ck-svg" width="20" height="20" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M7 16.5l5.5 5.5L25 9.5"/>
+            </svg>
+          </button>
+        </div>
+        ${isOpen ? `
+          <div class="note-area">
+            <textarea id="note-${ex.id}" placeholder="Notat (valgfritt) — posisjon, vekt, progresjon…">${rec?.note ? escapeHtml(rec.note) : ''}</textarea>
+            <div class="note-actions">
+              <button class="btn-primary" data-action="log">Logg økt</button>
+              <button class="btn-ghost"   data-action="skip">Hopp over</button>
+            </div>
+          </div>` : ''}
+      `;
+      list.appendChild(wrap);
+
+      attachSwipe(wrap);
+      wireRow(wrap, ex.id);
+    });
+
+    if (openId) {
+      document.querySelector(`.row-wrap[data-id="${openId}"] textarea`)?.focus();
     }
   }
 
-  async function log(id, skipNote = false) {
-    const note   = skipNote ? '' : (document.getElementById(`note-${id}`)?.value.trim() || '');
-    const date   = new Date().toISOString();
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;',
+    }[c]));
+  }
 
-    // Optimistic update
-    state[id] = { date, note };
+  // ───────────────────────────────────────────────────────────────────────
+  // Row interactions: tap-to-open + ✓-button-to-open + log buttons
+  // ───────────────────────────────────────────────────────────────────────
+  function wireRow(wrap, id) {
+    const row = wrap.querySelector('.row');
+    const check = wrap.querySelector('.check-btn');
+
+    // ✓ button — primary affordance per spec
+    check.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openRow(id);
+    });
+
+    // Tap row anywhere → also opens note flow (ergonomic improvement)
+    row.addEventListener('click', (e) => {
+      if (wrap.classList.contains('logging')) return;
+      // ignore clicks that bubbled from check-btn/buttons inside note flow
+      if (e.target.closest('button')) return;
+      openRow(id);
+    });
+
+    // Log / skip buttons inside the expanded note area
+    wrap.querySelectorAll('[data-action]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const skip = btn.dataset.action === 'skip';
+        const note = skip ? '' : (wrap.querySelector('textarea')?.value.trim() || '');
+        log(id, note);
+      });
+    });
+  }
+
+  function openRow(id) {
+    // Toggle: tapping the already-open row closes it.
+    openId = openId === id ? null : id;
+    render();
+  }
+
+  // ───────────────────────────────────────────────────────────────────────
+  // Swipe-to-log gesture
+  // Pointer-based, axis-locked. Released past 42% of width → commits.
+  // The card slides off; the satisfying checkmark animation plays after.
+  // ───────────────────────────────────────────────────────────────────────
+  function attachSwipe(wrap) {
+    const row = wrap.querySelector('.row');
+    let drag = null, dx = 0, threshold = 0;
+
+    row.addEventListener('pointerdown', (e) => {
+      if (wrap.classList.contains('open')   ||
+          wrap.classList.contains('logging') ||
+          wrap.classList.contains('pending')) return;
+      const t = e.target.tagName;
+      if (t === 'BUTTON' || t === 'TEXTAREA') return;
+      threshold = row.offsetWidth * 0.42;
+      row.setPointerCapture(e.pointerId);
+      drag = { id: e.pointerId, x: e.clientX, y: e.clientY, axis: null };
+      dx = 0;
+    });
+
+    row.addEventListener('pointermove', (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const ddx = e.clientX - drag.x;
+      const ddy = e.clientY - drag.y;
+      if (!drag.axis) {
+        if (Math.abs(ddx) < 6 && Math.abs(ddy) < 6) return;
+        drag.axis = Math.abs(ddx) > Math.abs(ddy) ? 'x' : 'y';
+      }
+      if (drag.axis !== 'x') return;
+      e.preventDefault();
+      dx = ddx < 0 ? ddx : ddx * 0.2;  // rubber-band rightward pull
+      const progress = Math.min(1, Math.max(0, -dx / threshold));
+      row.style.transform = `translateX(${dx}px)`;
+      wrap.classList.add('swiping');
+      wrap.classList.toggle('armed', dx <= -threshold);
+      wrap.style.setProperty('--progress', progress);
+      // Slipp-label update
+      const lbl = wrap.querySelector('.track-label');
+      if (lbl) lbl.textContent = dx <= -threshold ? 'Slipp · logg' : 'Dra · logg';
+    });
+
+    const endDrag = (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const committed = drag.axis === 'x' && dx <= -threshold;
+      drag = null;
+      if (committed) {
+        // Animate row fully off, then commit a no-note log.
+        row.style.transition = 'transform 0.2s ease-out, opacity 0.2s';
+        row.style.transform  = `translateX(${-row.offsetWidth - 40}px)`;
+        row.style.opacity    = '0';
+        wrap.classList.remove('armed');
+        setTimeout(() => log(wrap.dataset.id, ''), 200);
+      } else {
+        row.style.transition = 'transform 0.35s cubic-bezier(.2,.7,.3,1)';
+        row.style.transform  = '';
+        wrap.classList.remove('armed', 'swiping');
+        // Clear inline transition after settle so CSS class transitions resume.
+        setTimeout(() => { row.style.transition = ''; }, 380);
+      }
+    };
+    row.addEventListener('pointerup', endDrag);
+    row.addEventListener('pointercancel', endDrag);
+  }
+
+  // ───────────────────────────────────────────────────────────────────────
+  // Logging — optimistic local update + checkmark draw + slide-to-bottom
+  // Then async sync to Apps Script. localStorage cache always wins on boot.
+  // ───────────────────────────────────────────────────────────────────────
+  async function log(id, note = '') {
+    const wrap = document.querySelector(`.row-wrap[data-id="${id}"]`);
+    if (!wrap) return;
+    if (openId === id) openId = null;
+
+    // Phase 1: checkmark draw + glow (~520ms). The row stays where it is.
+    wrap.classList.add('logging');
+    // If we got here via swipe, the row was already translated off-screen.
+    // Reset transform so the checkmark animation is centered visually.
+    const row = wrap.querySelector('.row');
+    row.style.transition = '';
+    row.style.transform = '';
+    row.style.opacity = '';
+    wrap.classList.remove('swiping', 'armed');
+
+    await wait(520);
+
+    // Phase 2: fade row out (260ms), then update state + re-render.
+    wrap.classList.add('pending');
+    await wait(260);
+
+    state[id] = { date: new Date().toISOString(), note };
     localStorage.setItem('state', JSON.stringify(state));
+    render();
 
-    // Fade card out, then re-render
-    const card = document.querySelector(`.card[data-id="${id}"]`);
-    if (card) card.classList.add('fading');
-    setTimeout(render, 260);
-
-    // Sync to Sheets
+    // Phase 3: background sync (UI is already updated).
     if (apiUrl) {
       setStatus('Lagrer…');
       try {
-        const params = new URLSearchParams({ action: 'log', exercise: id, note, date, _: Date.now() });
+        const params = new URLSearchParams({
+          action: 'log', exercise: id, note, date: state[id].date, _: Date.now(),
+        });
         await fetch(`${apiUrl}?${params}`);
         setStatus('Synkronisert');
         setTimeout(() => setStatus(''), 2000);
@@ -335,15 +696,18 @@
     }
   }
 
-  // ── Fetch from Sheets ────────────────────────────────────────────────────
+  const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
+  // ───────────────────────────────────────────────────────────────────────
+  // Sheets fetch (boot + after config change)
+  // ───────────────────────────────────────────────────────────────────────
   async function fetchRemote() {
     if (!apiUrl) return;
     setStatus('Henter…');
     try {
       const res  = await fetch(`${apiUrl}?action=get&_=${Date.now()}`);
       const data = await res.json();
-      state = data;
+      state = data || {};
       localStorage.setItem('state', JSON.stringify(state));
       render();
       setStatus('');
@@ -356,33 +720,33 @@
     document.getElementById('status').textContent = msg;
   }
 
-  // ── Config modal ─────────────────────────────────────────────────────────
-
-  document.getElementById('config-btn').onclick = () => {
+  // ───────────────────────────────────────────────────────────────────────
+  // Config modal — Apps Script URL setup
+  // ───────────────────────────────────────────────────────────────────────
+  const modal = document.getElementById('modal');
+  document.getElementById('config-btn').addEventListener('click', () => {
     document.getElementById('url-input').value = apiUrl;
-    document.getElementById('modal').classList.add('open');
-  };
-
-  document.getElementById('save-btn').onclick = () => {
+    modal.classList.add('open');
+  });
+  document.getElementById('save-btn').addEventListener('click', () => {
     const url = document.getElementById('url-input').value.trim();
     if (!url) return;
     apiUrl = url;
     localStorage.setItem('apiUrl', url);
-    document.getElementById('modal').classList.remove('open');
-    document.getElementById('config-btn').textContent = 'Innstillinger';
+    modal.classList.remove('open');
     fetchRemote();
-  };
+  });
+  document.getElementById('cancel-btn').addEventListener('click', () => {
+    modal.classList.remove('open');
+  });
 
-  document.getElementById('cancel-btn').onclick = () =>
-    document.getElementById('modal').classList.remove('open');
-
-  // ── Boot ─────────────────────────────────────────────────────────────────
-
+  // ───────────────────────────────────────────────────────────────────────
+  // Boot
+  // ───────────────────────────────────────────────────────────────────────
   render();
   if (!apiUrl) {
-    document.getElementById('modal').classList.add('open');
+    modal.classList.add('open');
   } else {
-    document.getElementById('config-btn').textContent = 'Innstillinger';
     fetchRemote();
   }
 </script>
