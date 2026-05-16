@@ -254,7 +254,9 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+  import { daysSince, badgeInfo, sorted } from './logic.js';
+
   const EXERCISES = [
     { id: 'planche', name: 'Planche Push-up',   sub: 'Horisontal skyv' },
     { id: 'rowing',  name: 'Horisontal Roing',   sub: 'Horisontal trekk' },
@@ -267,35 +269,11 @@
   let apiUrl = localStorage.getItem('apiUrl') || '';
   let state  = JSON.parse(localStorage.getItem('state') || '{}');
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
-
-  function daysSince(dateStr) {
-    if (!dateStr) return null;
-    return Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
-  }
-
-  function badgeInfo(days) {
-    if (days === null)   return { cls: 'badge-never', label: 'Aldri' };
-    if (days === 0)      return { cls: 'badge-fresh', label: 'I dag' };
-    if (days === 1)      return { cls: 'badge-fresh', label: '1 dag siden' };
-    if (days <= 4)       return { cls: 'badge-fresh', label: `${days} dager siden` };
-    if (days <= 7)       return { cls: 'badge-soon',  label: `${days} dager siden` };
-    return               { cls: 'badge-due',          label: `${days} dager siden` };
-  }
-
-  function sorted() {
-    return [...EXERCISES].sort((a, b) => {
-      const da = daysSince(state[a.id]?.date) ?? 9999;
-      const db = daysSince(state[b.id]?.date) ?? 9999;
-      return db - da;
-    });
-  }
-
   // ── Render ────────────────────────────────────────────────────────────────
 
   function render() {
     const list = document.getElementById('list');
-    list.innerHTML = sorted().map(ex => {
+    list.innerHTML = sorted(EXERCISES, state).map(ex => {
       const days = daysSince(state[ex.id]?.date);
       const { cls, label } = badgeInfo(days);
       return `
