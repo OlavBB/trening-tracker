@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0f1117">
+  <title>Trening</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #242736;
+      --primary: #4ade80;
+      --text: #f1f5f9;
+      --text-dim: #64748b;
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      padding: 16px 16px 40px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0 24px;
+    }
+
+    header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+
+    #config-btn {
+      background: none;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      color: var(--text-dim);
+      font-size: 14px;
+      cursor: pointer;
+      padding: 6px 10px;
+    }
+
+    #list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      transition: opacity 0.25s;
+    }
+
+    .card.fading { opacity: 0; }
+
+    .card-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .ex-info { flex: 1; min-width: 0; }
+    .ex-name { font-size: 15px; font-weight: 600; }
+    .ex-sub  { font-size: 12px; color: var(--text-dim); margin-top: 1px; }
+
+    .badge {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 20px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .badge-never  { background: #1e1b4b; color: #a78bfa; }
+    .badge-fresh  { background: #14532d; color: #4ade80; }
+    .badge-soon   { background: #431407; color: #fb923c; }
+    .badge-due    { background: #450a0a; color: #f87171; }
+
+    .check-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 2px solid #2d3748;
+      background: none;
+      color: var(--text-dim);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+
+    .card.open .check-btn {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: #14532d33;
+    }
+
+    .note-area {
+      display: none;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #1e293b;
+    }
+
+    .card.open .note-area { display: block; }
+
+    .note-area textarea {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      resize: none;
+      height: 64px;
+      line-height: 1.4;
+    }
+
+    .note-area textarea::placeholder { color: var(--text-dim); }
+    .note-area textarea:focus { outline: none; border-color: var(--primary); }
+
+    .note-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .btn-primary {
+      flex: 1;
+      background: var(--primary);
+      color: #052e16;
+      font-weight: 700;
+      font-size: 14px;
+      border: none;
+      border-radius: 10px;
+      padding: 11px;
+      cursor: pointer;
+    }
+
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text-dim);
+      font-size: 14px;
+      border: none;
+      border-radius: 10px;
+      padding: 11px 16px;
+      cursor: pointer;
+    }
+
+    #status {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 18px;
+      min-height: 16px;
+    }
+
+    /* Setup modal */
+    #modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 50;
+      padding: 24px;
+      align-items: flex-end;
+    }
+    #modal.open { display: flex; }
+
+    .modal-box {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 24px;
+      width: 100%;
+    }
+
+    .modal-box h2 { font-size: 17px; margin-bottom: 8px; }
+
+    .modal-box p {
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .modal-box ol {
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.8;
+      margin: 0 0 16px 18px;
+    }
+
+    .modal-box input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      padding: 11px 12px;
+      color: var(--text);
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    .modal-box input:focus { outline: none; border-color: var(--primary); }
+
+    .modal-actions { display: flex; gap: 8px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Trening</h1>
+  <button id="config-btn">Koble til Sheets</button>
+</header>
+
+<div id="list"></div>
+<div id="status"></div>
+
+<div id="modal">
+  <div class="modal-box">
+    <h2>Google Sheets oppsett</h2>
+    <p>Gjør dette én gang:</p>
+    <ol>
+      <li>Lag et nytt Google Sheet</li>
+      <li>Gå til Extensions → Apps Script</li>
+      <li>Lim inn koden fra <code>backend.gs</code></li>
+      <li>Deploy → New deployment → Web app</li>
+      <li>Access: <strong>Anyone</strong> → Deploy</li>
+      <li>Kopier URL-en og lim inn under</li>
+    </ol>
+    <input type="url" id="url-input" placeholder="https://script.google.com/macros/s/..." />
+    <div class="modal-actions">
+      <button class="btn-primary" id="save-btn">Lagre</button>
+      <button class="btn-secondary" id="cancel-btn">Avbryt</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const EXERCISES = [
+    { id: 'planche', name: 'Planche Push-up',   sub: 'Horisontal skyv' },
+    { id: 'rowing',  name: 'Horisontal Roing',   sub: 'Horisontal trekk' },
+    { id: 'press',   name: 'Skulderpress',        sub: 'Vertikal skyv' },
+    { id: 'pullup',  name: 'Pull-up',             sub: 'Vertikal trekk' },
+    { id: 'squat',   name: 'Knebøy',              sub: 'Knebøy' },
+    { id: 'nordic',  name: 'Nordic Curl',         sub: 'Knefleksjon' },
+  ];
+
+  let apiUrl = localStorage.getItem('apiUrl') || '';
+  let state  = JSON.parse(localStorage.getItem('state') || '{}');
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
+  function daysSince(dateStr) {
+    if (!dateStr) return null;
+    return Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
+  }
+
+  function badgeInfo(days) {
+    if (days === null)   return { cls: 'badge-never', label: 'Aldri' };
+    if (days === 0)      return { cls: 'badge-fresh', label: 'I dag' };
+    if (days === 1)      return { cls: 'badge-fresh', label: '1 dag siden' };
+    if (days <= 4)       return { cls: 'badge-fresh', label: `${days} dager siden` };
+    if (days <= 7)       return { cls: 'badge-soon',  label: `${days} dager siden` };
+    return               { cls: 'badge-due',          label: `${days} dager siden` };
+  }
+
+  function sorted() {
+    return [...EXERCISES].sort((a, b) => {
+      const da = daysSince(state[a.id]?.date) ?? 9999;
+      const db = daysSince(state[b.id]?.date) ?? 9999;
+      return db - da;
+    });
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  function render() {
+    const list = document.getElementById('list');
+    list.innerHTML = sorted().map(ex => {
+      const days = daysSince(state[ex.id]?.date);
+      const { cls, label } = badgeInfo(days);
+      return `
+        <div class="card" data-id="${ex.id}">
+          <div class="card-row">
+            <div class="ex-info">
+              <div class="ex-name">${ex.name}</div>
+              <div class="ex-sub">${ex.sub}</div>
+            </div>
+            <span class="badge ${cls}">${label}</span>
+            <button class="check-btn" onclick="openCard('${ex.id}')">✓</button>
+          </div>
+          <div class="note-area">
+            <textarea id="note-${ex.id}" placeholder="Notat (valgfritt) — posisjon, vekt, progresjon…"></textarea>
+            <div class="note-actions">
+              <button class="btn-primary"   onclick="log('${ex.id}')">Logg</button>
+              <button class="btn-secondary" onclick="log('${ex.id}', true)">Hopp over notat</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Interactions ──────────────────────────────────────────────────────────
+
+  function openCard(id) {
+    document.querySelectorAll('.card').forEach(c => c.classList.remove('open'));
+    const card = document.querySelector(`.card[data-id="${id}"]`);
+    if (card) {
+      card.classList.add('open');
+      card.querySelector('textarea')?.focus();
+    }
+  }
+
+  async function log(id, skipNote = false) {
+    const note   = skipNote ? '' : (document.getElementById(`note-${id}`)?.value.trim() || '');
+    const date   = new Date().toISOString();
+
+    // Optimistic update
+    state[id] = { date, note };
+    localStorage.setItem('state', JSON.stringify(state));
+
+    // Fade card out, then re-render
+    const card = document.querySelector(`.card[data-id="${id}"]`);
+    if (card) card.classList.add('fading');
+    setTimeout(render, 260);
+
+    // Sync to Sheets
+    if (apiUrl) {
+      setStatus('Lagrer…');
+      try {
+        const params = new URLSearchParams({ action: 'log', exercise: id, note, date, _: Date.now() });
+        await fetch(`${apiUrl}?${params}`);
+        setStatus('Synkronisert');
+        setTimeout(() => setStatus(''), 2000);
+      } catch {
+        setStatus('Offline — lagret lokalt');
+      }
+    }
+  }
+
+  // ── Fetch from Sheets ────────────────────────────────────────────────────
+
+  async function fetchRemote() {
+    if (!apiUrl) return;
+    setStatus('Henter…');
+    try {
+      const res  = await fetch(`${apiUrl}?action=get&_=${Date.now()}`);
+      const data = await res.json();
+      state = data;
+      localStorage.setItem('state', JSON.stringify(state));
+      render();
+      setStatus('');
+    } catch {
+      setStatus('Offline — viser lagret data');
+    }
+  }
+
+  function setStatus(msg) {
+    document.getElementById('status').textContent = msg;
+  }
+
+  // ── Config modal ─────────────────────────────────────────────────────────
+
+  document.getElementById('config-btn').onclick = () => {
+    document.getElementById('url-input').value = apiUrl;
+    document.getElementById('modal').classList.add('open');
+  };
+
+  document.getElementById('save-btn').onclick = () => {
+    const url = document.getElementById('url-input').value.trim();
+    if (!url) return;
+    apiUrl = url;
+    localStorage.setItem('apiUrl', url);
+    document.getElementById('modal').classList.remove('open');
+    document.getElementById('config-btn').textContent = 'Innstillinger';
+    fetchRemote();
+  };
+
+  document.getElementById('cancel-btn').onclick = () =>
+    document.getElementById('modal').classList.remove('open');
+
+  // ── Boot ─────────────────────────────────────────────────────────────────
+
+  render();
+  if (!apiUrl) {
+    document.getElementById('modal').classList.add('open');
+  } else {
+    document.getElementById('config-btn').textContent = 'Innstillinger';
+    fetchRemote();
+  }
+</script>
+</body>
+</html>
