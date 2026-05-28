@@ -220,6 +220,26 @@
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
 
+    /* ── Habit grid (2×2 — siste 4 uker) ───────────────────────────── */
+
+    .habit-grid {
+      flex: 0 0 auto;
+      display: grid;
+      grid-template-columns: 12px 12px;
+      grid-template-rows: 12px 12px;
+      gap: 3px;
+      align-self: center;
+    }
+    .habit-cell {
+      border-radius: 2px;
+      background: var(--hair-strong);
+      transition: background 0.25s;
+    }
+    .habit-cell.done {
+      background: var(--color);
+      opacity: 0.7;
+    }
+
     /* ✓ button — preserved per spec ("Trykk ✓ → kort ekspanderer") */
     .check-btn {
       flex: 0 0 40px;
@@ -412,7 +432,7 @@
 </div>
 
 <script type="module">
-  import { daysSince, badgeInfo, sorted } from './logic.js';
+  import { daysSince, badgeInfo, sorted, last4Weeks } from './logic.js';
 
   // ───────────────────────────────────────────────────────────────────────
   // Domain — exercises (unchanged from v1)
@@ -489,6 +509,8 @@
       const days = daysSince(rec?.date);
       const { cls } = badgeInfo(days);
       const { key: status, color } = statusFromCls(cls);
+      const dates = rec?.dates || (rec?.date ? [rec.date] : []);
+      const weeks = last4Weeks(dates);
       const isOpen = openId === ex.id;
 
       const wrap = document.createElement('div');
@@ -515,6 +537,12 @@
             <div class="sub">${ex.sub}</div>
             <div class="name">${ex.name}</div>
             ${rec?.note && !isOpen ? `<div class="last-note">${escapeHtml(rec.note)}</div>` : ''}
+          </div>
+          <div class="habit-grid" aria-label="Siste 4 uker">
+            <div class="habit-cell${weeks[0] ? ' done' : ''}"></div>
+            <div class="habit-cell${weeks[1] ? ' done' : ''}"></div>
+            <div class="habit-cell${weeks[2] ? ' done' : ''}"></div>
+            <div class="habit-cell${weeks[3] ? ' done' : ''}"></div>
           </div>
           <button class="check-btn" aria-label="Logg ${ex.name}">
             <svg class="ck-svg" width="20" height="20" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -676,7 +704,9 @@
     wrap.classList.add('pending');
     await wait(260);
 
-    state[id] = { date: new Date().toISOString(), note };
+    const now = new Date().toISOString();
+    const existingDates = state[id]?.dates || (state[id]?.date ? [state[id].date] : []);
+    state[id] = { date: now, note, dates: [now, ...existingDates].slice(0, 30) };
     localStorage.setItem('state', JSON.stringify(state));
     render();
 

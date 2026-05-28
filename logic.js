@@ -12,6 +12,22 @@ export function badgeInfo(days) {
   return              { cls: 'badge-due',           label: `${days} dager siden` };
 }
 
+export function last4Weeks(dates) {
+  const now = new Date();
+  const daysFromMon = now.getDay() === 0 ? 6 : now.getDay() - 1;
+  const thisMonday = new Date(now);
+  thisMonday.setHours(0, 0, 0, 0);
+  thisMonday.setDate(now.getDate() - daysFromMon);
+
+  const result = [false, false, false, false];
+  for (const d of (dates || [])) {
+    const diffMs = thisMonday.getTime() - new Date(d).getTime();
+    const weekIndex = diffMs < 0 ? 0 : Math.floor(diffMs / 86400000 / 7);
+    if (weekIndex <= 3) result[3 - weekIndex] = true;
+  }
+  return result;
+}
+
 export function sorted(exercises, state) {
   return [...exercises].sort((a, b) => {
     const da = state[a.id]?.date ? daysSince(state[a.id].date) : 9999;

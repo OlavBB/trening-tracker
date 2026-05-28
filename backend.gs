@@ -11,13 +11,23 @@ function doGet(e) {
 
 function getLastEntries() {
   const data = getOrCreateSheet().getDataRange().getValues();
-  const last = {};
+  const entries = {};
   for (let i = 1; i < data.length; i++) {
     const [ts, ex, note] = data[i];
     if (!ex) continue;
-    if (!last[ex] || ts > last[ex].date) last[ex] = { date: ts, note };
+    const d = typeof ts === 'string' ? ts : ts.toISOString();
+    if (!entries[ex]) entries[ex] = { date: null, note: '', dates: [] };
+    entries[ex].dates.push(d);
+    if (!entries[ex].date || d > entries[ex].date) {
+      entries[ex].date = d;
+      entries[ex].note = note;
+    }
   }
-  return json(last);
+  for (const ex of Object.keys(entries)) {
+    entries[ex].dates.sort((a, b) => b > a ? 1 : -1);
+    entries[ex].dates = entries[ex].dates.slice(0, 30);
+  }
+  return json(entries);
 }
 
 function logEntry(exercise, note, date) {
